@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+#
+# set system colors from colorlovers.com
+# requires: jq, wal
+#
+# author: daniel neemann (@zzzeyez)
+
+keyword=""
+amount="30"
+entry="$((RANDOM%$amount))"
+bg="1e1e1e"
+fg="fafafa"
+
+random() {
+	dir="${HOME}/.config/wal/colorschemes/dark"
+	n_files="$(/bin/ls -1 "$dir" | wc -l | cut -f1)"
+	rand_num="$(awk "BEGIN{srand();print int($n_files * rand()) + 1;}")"
+	file="$(/bin/ls -1 "$dir" | sed -ne "${rand_num}p")"
+	path="$(cd $dir && echo "$PWD/$file")" # Converts to full path.  
+	wal --theme "$path" -q
+	if [[ "$notify" ]] ; then
+		notify-send "$file loaded"
+	fi
+}
+
+colorlovers() {
+	# get colorlovers palette
+	url="http://www.colourlovers.com/api/palettes/top&format=json&numResults=$amount&keywords=$keyword"
+	json=$(curl -s "$url")
+	username=$(echo "$json" | jq ".[$entry] | .userName" | tr -d '"')
+	title=$(echo "$json" | jq ".[$entry] | .title" | tr -d '"')
+	color1=$(echo "$json" | jq ".[$entry] | .colors | .[0]" | tr -d '"')
+	color2=$(echo "$json" | jq ".[$entry] | .colors | .[1]" | tr -d '"')
+	color3=$(echo "$json" | jq ".[$entry] | .colors | .[2]" | tr -d '"')
+	color4=$(echo "$json" | jq ".[$entry] | .colors | .[3]" | tr -d '"')
+	color5=$(echo "$json" | jq ".[$entry] | .colors | .[4]" | tr -d '"')
+}
+
+setwal() {
+	# create wal theme
+	echo '{
+	"wallpaper": "",
+	"alpha": "100",
+	"special": { 
+	"background": "#'"$bg"'", 
+	"foreground": "#'"$fg"'", 
+	"cursor": "#'"$fg"'" 
+	}, 
+	"colors": { 
+	"color0": "#'"$bg"'", 
+	"color1": "#'"$color1"'", 
+	"color2": "#'"$color2"'", 
+	"color3": "#'"$color3"'", 
+	"color4": "#'"$color4"'", 
+	"color5": "#'"$color5"'", 
+	"color6": "#'"$color1"'", 
+	"color7": "#'"$fg"'", 
+	"color8": "#aaaaaa",
+	"color9": "#'"$color1"'", 
+	"color10": "#'"$color2"'", 
+	"color11": "#'"$color3"'", 
+	"color12": "#'"$color4"'", 
+	"color13": "#'"$color5"'", 
+	"color14": "#'"$color1"'", 
+	"color15": "#'"$fg"'" }} ' | jq . > /tmp/colors.json
+	wal --theme /tmp/colors.json -q && rm /tmp/colors.json &&
+	echo "${title//[[:space:]]/}" > /tmp/colorlovers
+	if [[ "$notify" ]] ; then
+		notify-send "$title by $username"
+	fi
+}
+
+printpalette() {
+	# color escapes
+	RED="\e[31m"
+	GRN="\e[32m"
+	YLW="\e[33m"
+	BLU="\e[34m"
+	PUR="\e[35m"
+	RST="\e[0m"
+	# build the color bars
+	BAR="███"
+	((LEN = ${#BAR} * 6))
+	OUTT="$RED$BAR$GRN$BAR$YLW$BAR$BLU$BAR$PUR$BAR$RST"
+	# print it
+	if [[ "$random" ]] ; then
+		printf "$OUTT\n$file loaded \n"
+	else
+		printf "$OUTT\n$title by $username\nkeyword: $keyword\n"
+	fi
+}
+
+walset() {
+	if [[ -x "$(command -v wal-set)" ]] ; then
+		wal-set
+	fi
+}
+
+save() {
+#	source /tmp/colorlovers
+	savename="$(cat /tmp/colorlovers)"
+	cp "${HOME}/.cache/wal/colors.json" "${HOME}/.config/wal/colorschemes/dark/$savename.json" &&
+	echo "colorscheme $savename saved."
+	echo "to load:"
+	echo "wal --theme $savename"
+	if [[ "$notify" ]] ; then
+		notify-send "colorscheme $savename saved"
+	fi
+}
+
+flags() {
+	while getopts nsrlh opt; do
+		case $opt in
+			n)
+			notify="on"
+			;;
+			s)
+			save
+			exit
+			;;
+			r)
+			random="on"
+			random
+			walset
+			printpalette
+			exit
+			;;
+			l)
+			bg="fefefe"
+			fg="222222"
+			;;
+			h)
+			echo "help"
+			exit
+			;;
+		esac
+	done
+	# if no flags are provided, treat as keyword
+	shift "$((OPTIND-1))" 
+	if [ "$1" != "-*" ] && [ "$1" ] ;
+	then
+		keyword="$1"	
+	fi
+}
+
+if [ "$#" -ne 0 ]; then
+	flags "$@"
+	colorlovers &&
+	setwal
+	walset
+	printpalette
+else
+	amount="100"
+	colorlovers &&
+	setwal
+	walset
+	printpalette
+fi
+
+# maybe source /tmp/colorlovers and add lightmode status to second line
