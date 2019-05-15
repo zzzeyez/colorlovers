@@ -11,7 +11,7 @@ usage: colorlovers [OPTION] [SEARCHTERM]
        
 example: colorlovers spring
          colorlovers -l coffee
-		 colorlovers -nr
+         colorlovers -nr
 	 
 optional arguments:
   -n                      notify when done (requires notify-send)
