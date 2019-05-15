@@ -72,22 +72,24 @@ setwal() {
 }
 
 printpalette() {
-	# color escapes
-	RED="\e[31m"
-	GRN="\e[32m"
-	YLW="\e[33m"
-	BLU="\e[34m"
-	PUR="\e[35m"
-	RST="\e[0m"
-	# build the color bars
-	BAR="███"
-	((LEN = ${#BAR} * 6))
-	OUTT="$RED$BAR$GRN$BAR$YLW$BAR$BLU$BAR$PUR$BAR$RST"
-	# print it
-	if [[ "$random" ]] ; then
-		printf "$OUTT\n$file loaded \n"
-	else
-		printf "$OUTT\n$title by $username\nkeyword: $keyword\n"
+	if [[ -z "$quiet" ]] ; then
+		# color escapes
+		RED="\e[31m"
+		GRN="\e[32m"
+		YLW="\e[33m"
+		BLU="\e[34m"
+		PUR="\e[35m"
+		RST="\e[0m"
+		# build the color bars
+		BAR="███"
+		((LEN = ${#BAR} * 6))
+		OUTT="$RED$BAR$GRN$BAR$YLW$BAR$BLU$BAR$PUR$BAR$RST"
+		# print it
+		if [[ "$random" ]] ; then
+			printf "$OUTT\n$file loaded \n"
+		else
+			printf "$OUTT\n$title by $username\nkeyword: $keyword\n"
+		fi
 	fi
 }
 
@@ -101,16 +103,35 @@ save() {
 #	source /tmp/colorlovers
 	savename="$(cat /tmp/colorlovers)"
 	cp "${HOME}/.cache/wal/colors.json" "${HOME}/.config/wal/colorschemes/dark/$savename.json" &&
-	echo "colorscheme $savename saved."
-	echo "to load:"
-	echo "wal --theme $savename"
+	if [[ -z "$quiet" ]] ; then
+		echo "colorscheme $savename saved."
+		echo "to load:"
+		echo "wal --theme $savename"
+	fi
 	if [[ "$notify" ]] ; then
 		notify-send "colorscheme $savename saved"
 	fi
 }
 
+help() {
+	printf \
+"usage: colorlovers [OPTION] [SEARCHTERM]
+      [-n] [-s] [-r] [-l] [-h] [-q]
+       
+example: colorlovers spring
+         colorlovers -l coffee
+		 colorlovers -nr
+	 
+optional arguments:
+  -n                      notify when done (requires notify-send)
+  -s                      save colorscheme to ~/.cache/wal/colorschemes/dark
+  -r                      load random theme from ~/.cache/wal/colorschemes/dark
+  -q                      quiet mode (print nothing)
+  -h                      display this help page and exit"
+}
+
 flags() {
-	while getopts nsrlh opt; do
+	while getopts nsrlqh opt; do
 		case $opt in
 			n)
 			notify="on"
@@ -130,8 +151,11 @@ flags() {
 			bg="fefefe"
 			fg="222222"
 			;;
+			q)
+			quiet="on"
+			;;
 			h)
-			echo "help"
+			help
 			exit
 			;;
 		esac
@@ -157,5 +181,3 @@ else
 	walset
 	printpalette
 fi
-
-# maybe source /tmp/colorlovers and add lightmode status to second line
