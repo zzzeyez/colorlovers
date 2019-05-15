@@ -8,6 +8,7 @@
 keyword=""
 amount="30"
 entry="$((RANDOM%$amount))"
+gray="a0a0a0"
 bg="1e1e1e"
 fg="fafafa"
 
@@ -55,7 +56,7 @@ setwal() {
 	"color5": "#'"$color5"'", 
 	"color6": "#'"$color1"'", 
 	"color7": "#'"$fg"'", 
-	"color8": "#aaaaaa",
+	"color8": "#'"$gray"'",
 	"color9": "#'"$color1"'", 
 	"color10": "#'"$color2"'", 
 	"color11": "#'"$color3"'", 
