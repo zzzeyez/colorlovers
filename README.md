@@ -28,4 +28,6 @@ optional arguments:
 ```
 
 ## Features
-`colorlovers` stores the search terms you use and selects one at random when no arguments are given.
+`colorlovers` stores the search terms and background colors you choose so that it can select from them randomly when no arguments are provided.  These lists are located at ~/.cache/colorlovers/keywords and ~/.cache/colorlovers/bg in case you want to manually edit them yourself.
+
+All cache data can be erased by running `colorlovers -c`.

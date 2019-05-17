@@ -8,13 +8,18 @@
 cache="${HOME}/.cache/colorlovers"
 amount="30"
 entry="$((RANDOM%$amount))"
-gray="a0a0a0"
-dark="222222"
-light="fafafa"
+bg="141414"
 
 setup() {
 	if [[ "$clean" ]] ; then
-		rm -rf "$cache"
+		while true; do
+			read -p "Are you sure you want to remove the cache? (yes/no) " yn
+			case $yn in
+				[Yy]* ) rm -rf "$cache"; break;;
+		        [Nn]* ) exit;;
+			* ) echo "Please answer yes or no.";;
+			esac
+		done
 		if [[ -z "$quiet" ]] ; then
 			echo "$cache removed"
 		fi
@@ -36,6 +41,12 @@ setup() {
 		shuf="$(which shuf)"
 		if [ -x "$shuf" ] ; then
 			keyword="$(cat $cache/keywords | shuf -n 1)"
+		fi
+	fi
+	if [[ -z "$bg_custom" ]] && [[ -f "$cache/bg" ]] ; then
+		shuf="$(which shuf)"
+		if [ -x "$shuf" ] ; then
+			bg="$(cat $cache/bg | shuf -n 1)"
 		fi
 	fi
 }
@@ -60,6 +71,10 @@ colorlovers() {
 		url="http://www.colourlovers.com/api/palettes/top&format=json&numResults=$amount&keywords=$keyword"
 		json=$(curl -s "$url")
 		username=$(echo "$json" | jq ".[$entry] | .userName" | tr -d '"')
+		if [[ "$username" = "null" ]] ; then
+			echo "no results found - try another search term.  exiting.."
+			exit
+		fi
 		title=$(echo "$json" | jq ".[$entry] | .title" | tr -d '"')
 		color1=$(echo "$json" | jq ".[$entry] | .colors | .[0]" | tr -d '"')
 		color2=$(echo "$json" | jq ".[$entry] | .colors | .[1]" | tr -d '"')
@@ -77,42 +92,43 @@ setwal() {
 		name="${name%json}"
 		echo "$name" > $cache/colorlovers
 	else
-		if [[ "$bg" ]] ; then
-			bg="$(echo $bg | tr -d '#')"
-			foo="$(echo $bg | head -c 1)"
-			if [[ "$foo" =~ [a-zA-Z] ]] ; then
-				light="$dark"
-				dark="$bg"
-			else
-				dark="$bg"
-			fi
+		bg="$(echo $bg | tr -d '#')"
+		dummy="$(echo $bg | head -c 1)"
+		if [[ "$dummy" =~ [a-zA-Z] ]] ; then
+			light="on"
+			fg="000000"
+			gray="bfbfbf"
+		else
+			fg="fafafa"
+			gray="4f4f4f"
 		fi
+		unset dummy
 		# create wal theme
 		echo '{
-		"wallpaper": "",
+		"wallpaper": "None",
 		"alpha": "100",
 		"special": { 
-		"background": "#'"$dark"'", 
-		"foreground": "#'"$light"'", 
-		"cursor": "#'"$light"'" 
+		"background": "#'"$bg"'", 
+		"foreground": "#'"$fg"'", 
+		"cursor": "#'"$fg"'" 
 		}, 
 		"colors": { 
-		"color0": "#'"$dark"'", 
+		"color0": "#'"$bg"'", 
 		"color1": "#'"$color1"'", 
 		"color2": "#'"$color2"'", 
 		"color3": "#'"$color3"'", 
 		"color4": "#'"$color4"'", 
 		"color5": "#'"$color5"'", 
-		"color6": "#'"$color1"'", 
-		"color7": "#'"$light"'", 
+		"color6": "#'"a0a0a0"'", 
+		"color7": "#'"$fg"'", 
 		"color8": "#'"$gray"'",
 		"color9": "#'"$color1"'", 
 		"color10": "#'"$color2"'", 
 		"color11": "#'"$color3"'", 
 		"color12": "#'"$color4"'", 
 		"color13": "#'"$color5"'", 
-		"color14": "#'"$color1"'", 
-		"color15": "#'"$light"'" }} ' | jq . > "$cache/colors.json"
+		"color14": "#'"a0a0a0"'", 
+		"color15": "#'"$fg"'" }} ' | jq . > "$cache/colors.json"
 		wal --theme "$cache/colors.json" -q -n && rm "$cache/colors.json" &&
 		name="${title//[[:space:]]/}"
 		name="${name//[^[:alnum:]]/}"
@@ -121,11 +137,19 @@ setwal() {
 		else
 			convert "$image" -resize 161x161! -quality 100 "$cache/previews/$name.png" && image="$cache/previews/$name.png"
 		fi
-		if [[ "$keyword" ]] && [[ -z "$shuf" ]] ; then
+		if [[ "$keyword" ]] ; then
 			query="$(cat $cache/keywords | grep $keyword)"
 			if [[ -z "$query" ]] ; then
 				echo "$keyword" >> "$cache/keywords"
 			fi
+			unset query
+		fi
+		if [[ "$bg" ]] ; then
+			query="$(cat $cache/bg | grep $bg)"
+			if [[ -z "$query" ]] ; then
+				echo "$bg" >> "$cache/bg"
+			fi
+			unset query
 		fi
 		echo "$name" > "$cache/colorlovers"
 	fi
@@ -183,7 +207,7 @@ walset() {
 
 save() {
 	name="$(cat $cache/colorlovers)"
-	cp "${HOME}/.cache/wal/colors.json" "$cache/themes/$name.json" &&
+	grep -v "wallpaper" "${HOME}/.cache/wal/colors.json" > "$cache/themes/$name.json" &&
 	if [[ -z "$quiet" ]] ; then
 		echo "colorscheme $name saved."
 		echo "to load:"
@@ -206,16 +230,15 @@ optional arguments:
   -r                      load random theme from ~/.cache/colorlovers
   -b [hex color]          custom background color (foreground
                           color chosen appropriately)
-  -l                      light mode
   -q                      quiet mode (print nothing)
   -t                      list all themes
-  -o [theme]              load theme
+  -l [theme]              load theme
   -c                      clear cache (~/.cache/colorlovers)
   -h                      display this help page and exit \n"
 }
 
 flags() {
-	while getopts nsrb:lqto:ch opt; do
+	while getopts nsrb:qtl:ch opt; do
 		case $opt in
 			n)
 			notify="on"
@@ -233,19 +256,13 @@ flags() {
 			b)
 			bg="$OPTARG"
 			;;
-			l)
-			dummy="$dark"
-			dark="$light"
-			light="$dummy"
-			unset dummy
-			;;
 			q)
 			quiet="on"
 			;;
 			t)
 			list="on"
 			;;
-			o)
+			l)
 			load="on"
 			file="$OPTARG.json"
 			load
@@ -285,3 +302,5 @@ else
 fi
 
 # todo
+# remove -t flag, use -l with no arguments to list themes
+# auto set $color8 depending on bg color
