@@ -5,69 +5,129 @@
 #
 # author: daniel neemann (@zzzeyez)
 
-keyword=""
+cache="${HOME}/.cache/colorlovers"
 amount="30"
 entry="$((RANDOM%$amount))"
 gray="a0a0a0"
-bg="1e1e1e"
-fg="fafafa"
+dark="222222"
+light="fafafa"
 
-random() {
-	dir="${HOME}/.config/wal/colorschemes/dark"
-	n_files="$(/bin/ls -1 "$dir" | wc -l | cut -f1)"
-	rand_num="$(awk "BEGIN{srand();print int($n_files * rand()) + 1;}")"
-	file="$(/bin/ls -1 "$dir" | sed -ne "${rand_num}p")"
-	path="$(cd $dir && echo "$PWD/$file")" # Converts to full path.  
-	wal --theme "$path" -q
-	if [[ "$notify" ]] ; then
-		notify-send "$file loaded"
+setup() {
+	if [[ "$clean" ]] ; then
+		rm -rf "$cache"
+		if [[ -z "$quiet" ]] ; then
+			echo "$cache removed"
+		fi
+		if [[ "$notify" ]] ; then
+			notify-send "$cache removed"
+		fi
+		exit
+	fi
+	if [[ "$list" ]] ; then
+		echo 'themes:'
+		ls -1 "$cache/themes" | sed -e 's/.json//g'
+		printf "\nto load theme:\ncolorlovers -o theme\n"
+		exit
+	fi
+	mkdir -p "$cache"
+	mkdir -p "$cache/themes"
+	mkdir -p "$cache/previews"
+	if [[ -z "$keyword" ]] && [[ -f "$cache/keywords" ]] ; then
+		shuf="$(which shuf)"
+		if [ -x "$shuf" ] ; then
+			keyword="$(cat $cache/keywords | shuf -n 1)"
+		fi
+	fi
+}
+
+load() {
+	dir="$cache/themes"
+	if [[ "$random" ]] ; then
+		n_files="$(/bin/ls -1 "$dir" | wc -l | cut -f1)"
+		rand_num="$(awk "BEGIN{srand();print int($n_files * rand()) + 1;}")"
+		file="$(/bin/ls -1 "$dir" | sed -ne "${rand_num}p")"
+	fi
+	path="$(cd $dir && echo "$PWD/$file")" # Converts to full path.
+	if [[ ! -f "$path" ]] ; then
+		echo "$path not found, exiting.."
 	fi
 }
 
 colorlovers() {
-	# get colorlovers palette
-	url="http://www.colourlovers.com/api/palettes/top&format=json&numResults=$amount&keywords=$keyword"
-	json=$(curl -s "$url")
-	username=$(echo "$json" | jq ".[$entry] | .userName" | tr -d '"')
-	title=$(echo "$json" | jq ".[$entry] | .title" | tr -d '"')
-	color1=$(echo "$json" | jq ".[$entry] | .colors | .[0]" | tr -d '"')
-	color2=$(echo "$json" | jq ".[$entry] | .colors | .[1]" | tr -d '"')
-	color3=$(echo "$json" | jq ".[$entry] | .colors | .[2]" | tr -d '"')
-	color4=$(echo "$json" | jq ".[$entry] | .colors | .[3]" | tr -d '"')
-	color5=$(echo "$json" | jq ".[$entry] | .colors | .[4]" | tr -d '"')
+	if [[ -z "$file" ]] ; then
+		keyword="$(echo $keyword | sed -e 's/ /+/g')"
+		# get colorlovers palette
+		url="http://www.colourlovers.com/api/palettes/top&format=json&numResults=$amount&keywords=$keyword"
+		json=$(curl -s "$url")
+		username=$(echo "$json" | jq ".[$entry] | .userName" | tr -d '"')
+		title=$(echo "$json" | jq ".[$entry] | .title" | tr -d '"')
+		color1=$(echo "$json" | jq ".[$entry] | .colors | .[0]" | tr -d '"')
+		color2=$(echo "$json" | jq ".[$entry] | .colors | .[1]" | tr -d '"')
+		color3=$(echo "$json" | jq ".[$entry] | .colors | .[2]" | tr -d '"')
+		color4=$(echo "$json" | jq ".[$entry] | .colors | .[3]" | tr -d '"')
+		color5=$(echo "$json" | jq ".[$entry] | .colors | .[4]" | tr -d '"')
+		image=$(echo "$json" | jq ".[$entry] | .imageUrl" | tr -d '"')
+	fi
 }
 
 setwal() {
-	# create wal theme
-	echo '{
-	"wallpaper": "",
-	"alpha": "100",
-	"special": { 
-	"background": "#'"$bg"'", 
-	"foreground": "#'"$fg"'", 
-	"cursor": "#'"$fg"'" 
-	}, 
-	"colors": { 
-	"color0": "#'"$bg"'", 
-	"color1": "#'"$color1"'", 
-	"color2": "#'"$color2"'", 
-	"color3": "#'"$color3"'", 
-	"color4": "#'"$color4"'", 
-	"color5": "#'"$color5"'", 
-	"color6": "#'"$color1"'", 
-	"color7": "#'"$fg"'", 
-	"color8": "#'"$gray"'",
-	"color9": "#'"$color1"'", 
-	"color10": "#'"$color2"'", 
-	"color11": "#'"$color3"'", 
-	"color12": "#'"$color4"'", 
-	"color13": "#'"$color5"'", 
-	"color14": "#'"$color1"'", 
-	"color15": "#'"$fg"'" }} ' | jq . > /tmp/colors.json
-	wal --theme /tmp/colors.json -q && rm /tmp/colors.json &&
-	echo "${title//[[:space:]]/}" > /tmp/colorlovers
-	if [[ "$notify" ]] ; then
-		notify-send "$title by $username"
+	if [[ "$file" ]] ; then
+		wal --theme "$path" -q -n &&
+		name="${file//[^[:alnum:]]/}"
+		name="${name%json}"
+		echo "$name" > $cache/colorlovers
+	else
+		if [[ "$bg" ]] ; then
+			bg="$(echo $bg | tr -d '#')"
+			foo="$(echo $bg | head -c 1)"
+			if [[ "$foo" =~ [a-zA-Z] ]] ; then
+				light="$dark"
+				dark="$bg"
+			else
+				dark="$bg"
+			fi
+		fi
+		# create wal theme
+		echo '{
+		"wallpaper": "",
+		"alpha": "100",
+		"special": { 
+		"background": "#'"$dark"'", 
+		"foreground": "#'"$light"'", 
+		"cursor": "#'"$light"'" 
+		}, 
+		"colors": { 
+		"color0": "#'"$dark"'", 
+		"color1": "#'"$color1"'", 
+		"color2": "#'"$color2"'", 
+		"color3": "#'"$color3"'", 
+		"color4": "#'"$color4"'", 
+		"color5": "#'"$color5"'", 
+		"color6": "#'"$color1"'", 
+		"color7": "#'"$light"'", 
+		"color8": "#'"$gray"'",
+		"color9": "#'"$color1"'", 
+		"color10": "#'"$color2"'", 
+		"color11": "#'"$color3"'", 
+		"color12": "#'"$color4"'", 
+		"color13": "#'"$color5"'", 
+		"color14": "#'"$color1"'", 
+		"color15": "#'"$light"'" }} ' | jq . > "$cache/colors.json"
+		wal --theme "$cache/colors.json" -q -n && rm "$cache/colors.json" &&
+		name="${title//[[:space:]]/}"
+		name="${name//[^[:alnum:]]/}"
+		if [[ -f "$cache/previews/$name.png" ]] ; then
+			image="$cache/previews/$name.png"
+		else
+			convert "$image" -resize 161x161! -quality 100 "$cache/previews/$name.png" && image="$cache/previews/$name.png"
+		fi
+		if [[ "$keyword" ]] && [[ -z "$shuf" ]] ; then
+			query="$(cat $cache/keywords | grep $keyword)"
+			if [[ -z "$query" ]] ; then
+				echo "$keyword" >> "$cache/keywords"
+			fi
+		fi
+		echo "$name" > "$cache/colorlovers"
 	fi
 }
 
@@ -85,10 +145,32 @@ printpalette() {
 		((LEN = ${#BAR} * 6))
 		OUTT="$RED$BAR$GRN$BAR$YLW$BAR$BLU$BAR$PUR$BAR$RST"
 		# print it
-		if [[ "$random" ]] ; then
-			printf "$OUTT\n$file loaded \n"
+		if [[ "$file" ]] ; then
+			printf "$OUTT\n$name loaded \n"
 		else
 			printf "$OUTT\n$title by $username\nkeyword: $keyword\n"
+		fi
+	fi
+}
+
+notify() {
+	if [[ "$notify" ]] ; then
+		if [[ "$save" ]] ; then
+			image="$cache/previews/$name.png"
+			if [[ -f "$image" ]] ; then
+				notify-send -m "colorscheme $name saved" -i "$image"
+			else
+				notify-send "colorscheme $name saved"
+			fi
+		elif [[ "$file" ]] ; then
+			image="$cache/previews/$name.png"
+			if [[ -f "$image" ]] ; then
+				notify-send -m "colorscheme $name loaded" -i "$image"
+			else
+				notify-send "colorscheme $name loaded"
+			fi
+		elif [[ "$url" ]] ; then
+			notify-send -m "$title by $username (keyword: $keyword)" -i "$image"
 		fi
 	fi
 }
@@ -100,59 +182,76 @@ walset() {
 }
 
 save() {
-#	source /tmp/colorlovers
-	savename="$(cat /tmp/colorlovers)"
-	cp "${HOME}/.cache/wal/colors.json" "${HOME}/.config/wal/colorschemes/dark/$savename.json" &&
+	name="$(cat $cache/colorlovers)"
+	cp "${HOME}/.cache/wal/colors.json" "$cache/themes/$name.json" &&
 	if [[ -z "$quiet" ]] ; then
-		echo "colorscheme $savename saved."
+		echo "colorscheme $name saved."
 		echo "to load:"
-		echo "wal --theme $savename"
-	fi
-	if [[ "$notify" ]] ; then
-		notify-send "colorscheme $savename saved"
+		echo "wal --theme $name"
 	fi
 }
 
 help() {
 	printf \
 "usage: colorlovers [OPTION] [SEARCHTERM]
-      [-n] [-s] [-r] [-l] [-h] [-q]
+      [-n] [-s] [-r] [-l] [-q] [-t] [-o theme] [-c] [-h]
        
 example: colorlovers spring
          colorlovers -l coffee
-         colorlovers -nr
+         colorlovers -nqr
 	 
 optional arguments:
   -n                      notify when done (requires notify-send)
-  -s                      save colorscheme to ~/.cache/wal/colorschemes/dark
-  -r                      load random theme from ~/.cache/wal/colorschemes/dark
+  -s                      save colorscheme to ~/.cache/colorlovers
+  -r                      load random theme from ~/.cache/colorlovers
+  -b [hex color]          custom background color (foreground
+                          color chosen appropriately)
+  -l                      light mode
   -q                      quiet mode (print nothing)
-  -h                      display this help page and exit"
+  -t                      list all themes
+  -o [theme]              load theme
+  -c                      clear cache (~/.cache/colorlovers)
+  -h                      display this help page and exit \n"
 }
 
 flags() {
-	while getopts nsrlqh opt; do
+	while getopts nsrb:lqto:ch opt; do
 		case $opt in
 			n)
 			notify="on"
 			;;
 			s)
+			save="on"
 			save
+			notify
 			exit
 			;;
 			r)
 			random="on"
-			random
-			walset
-			printpalette
-			exit
+			load
+			;;
+			b)
+			bg="$OPTARG"
 			;;
 			l)
-			bg="fefefe"
-			fg="222222"
+			dummy="$dark"
+			dark="$light"
+			light="$dummy"
+			unset dummy
 			;;
 			q)
 			quiet="on"
+			;;
+			t)
+			list="on"
+			;;
+			o)
+			load="on"
+			file="$OPTARG.json"
+			load
+			;;
+			c)
+			clean="on"
 			;;
 			h)
 			help
@@ -164,20 +263,25 @@ flags() {
 	shift "$((OPTIND-1))" 
 	if [ "$1" != "-*" ] && [ "$1" ] ;
 	then
-		keyword="$1"	
+		keyword="$@"
 	fi
 }
 
 if [ "$#" -ne 0 ]; then
 	flags "$@"
+	setup
 	colorlovers &&
 	setwal
 	walset
 	printpalette
+	notify
 else
-	amount="100"
+	setup
 	colorlovers &&
 	setwal
 	walset
 	printpalette
+	notify
 fi
+
+# todo
