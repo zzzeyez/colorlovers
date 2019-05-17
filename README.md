@@ -1,22 +1,31 @@
 # colorlovers
 
-![screenshot](screenshots/1.png) ![screenshot](screenshots/2.png) ![screenshot](screenshots/3.png)
+![screenshot](screenshots/1.png)
 
 apply palettes from colorlovers as system colors (requires `wal`, `jq`)
 
 ## Usage
 ```
 usage: colorlovers [OPTION] [SEARCHTERM]
-      [-n] [-s] [-r] [-l] [-h] [-q]
+      [-n] [-s] [-r] [-l] [-q] [-t] [-o theme] [-c] [-h]
        
 example: colorlovers spring
          colorlovers -l coffee
-         colorlovers -nr
+         colorlovers -nqr
 	 
 optional arguments:
   -n                      notify when done (requires notify-send)
-  -s                      save colorscheme to ~/.cache/wal/colorschemes/dark
-  -r                      load random theme from ~/.cache/wal/colorschemes/dark
+  -s                      save colorscheme to ~/.cache/colorlovers
+  -r                      load random theme from ~/.cache/colorlovers
+  -b [hex color]          custom background color (foreground
+                          color chosen appropriately)
+  -l                      light mode
   -q                      quiet mode (print nothing)
+  -t                      list all themes
+  -o [theme]              load theme
+  -c                      clear cache (~/.cache/colorlovers)
   -h                      display this help page and exit
-  ```
+```
+
+## Features
+`colorlovers` stores the search terms you use and selects one at random when no arguments are given.
