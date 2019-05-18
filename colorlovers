@@ -145,14 +145,20 @@ setwal() {
 			image="$cache/previews/$name.png"
 			convert "$image" -resize 161x161! -quality 100 "$cache/previews/$name.png" && image="$cache/previews/$name.png"
 		fi
-		if [[ "$keyword" ]] && [[ -f "$cache/keywords" ]] ; then
+		if [[ "$keyword" ]] ; then
+			if [[ ! -f "$cache/keywords" ]] ; then
+				touch "$cache/keywords"
+			fi
 			query="$(cat $cache/keywords | grep $keyword)"
 			if [[ -z "$query" ]] ; then
 				echo "$keyword" >> "$cache/keywords"
 			fi
 			unset query
 		fi
-		if [[ "$bg_custom" ]] || [[ -f "$cache/bg" ]] ; then
+		if [[ "$bg_custom" ]] ; then
+			if [[ ! -f "$cache/bg" ]] ; then
+				touch "$cache/bg"
+			fi
 			query="$(cat $cache/bg | grep $bg)"
 			if [[ -z "$query" ]] ; then
 				echo "$bg" >> "$cache/bg"
