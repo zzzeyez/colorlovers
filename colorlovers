@@ -8,16 +8,23 @@
 cache="${HOME}/.cache/colorlovers"
 amount="30"
 entry="$((RANDOM%$amount))"
-bg="141414"
+bg="181818"
 
 setup() {
 	if [[ "$clean" ]] ; then
 		while true; do
 			read -p "Are you sure you want to remove the cache? (yes/no) " yn
 			case $yn in
-				[Yy]* ) rm -rf "$cache"; break;;
-		        [Nn]* ) exit;;
-			* ) echo "Please answer yes or no.";;
+				[Yy]* )
+					rm -rf "$cache"
+					break
+				;;
+		        [Nn]* )
+					exit
+				;;
+				* )
+					echo "Please answer yes or no."
+				;;
 			esac
 		done
 		if [[ -z "$quiet" ]] ; then
@@ -88,14 +95,14 @@ colorlovers() {
 setwal() {
 	if [[ "$file" ]] ; then
 		wal --theme "$path" -q -n &&
-		name="${file//[^[:alnum:]]/}"
+		name="$(echo $file | sed 's/[^a-z0-9A-Z]//g')"
 		name="${name%json}"
 		echo "$name" > $cache/colorlovers
 	else
 		bg="$(echo $bg | tr -d '#')"
 		dummy="$(echo $bg | head -c 1)"
 		if [[ "$dummy" =~ [a-zA-Z] ]] ; then
-			light="on"
+			#light="on"
 			fg="000000"
 			gray="bfbfbf"
 		else
@@ -130,21 +137,22 @@ setwal() {
 		"color14": "#'"a0a0a0"'", 
 		"color15": "#'"$fg"'" }} ' | jq . > "$cache/colors.json"
 		wal --theme "$cache/colors.json" -q -n && rm "$cache/colors.json" &&
-		name="${title//[[:space:]]/}"
-		name="${name//[^[:alnum:]]/}"
+		name="$(echo $title | sed 's/[^a-z0-9A-Z]//g')"
 		if [[ -f "$cache/previews/$name.png" ]] ; then
 			image="$cache/previews/$name.png"
 		else
+			curl -o "$cache/previews/$name.png" "$image"
+			image="$cache/previews/$name.png"
 			convert "$image" -resize 161x161! -quality 100 "$cache/previews/$name.png" && image="$cache/previews/$name.png"
 		fi
-		if [[ "$keyword" ]] ; then
+		if [[ "$keyword" ]] && [[ -f "$cache/keywords" ]] ; then
 			query="$(cat $cache/keywords | grep $keyword)"
 			if [[ -z "$query" ]] ; then
 				echo "$keyword" >> "$cache/keywords"
 			fi
 			unset query
 		fi
-		if [[ "$bg" ]] ; then
+		if [[ "$bg_custom" ]] || [[ -f "$cache/bg" ]] ; then
 			query="$(cat $cache/bg | grep $bg)"
 			if [[ -z "$query" ]] ; then
 				echo "$bg" >> "$cache/bg"
@@ -254,6 +262,7 @@ flags() {
 			load
 			;;
 			b)
+			bg_custom="on"
 			bg="$OPTARG"
 			;;
 			q)
@@ -302,5 +311,6 @@ else
 fi
 
 # todo
-# remove -t flag, use -l with no arguments to list themes
-# auto set $color8 depending on bg color
+#
+# line 105 turns light='on' .  possibly useful
+# maybe for light themes vs dark themes
