@@ -141,7 +141,7 @@ setwal() {
 		if [[ -f "$cache/previews/$name.png" ]] ; then
 			image="$cache/previews/$name.png"
 		else
-			curl -o "$cache/previews/$name.png" "$image"
+			curl -o "$cache/previews/$name.png" "$image" &>/dev/null
 			image="$cache/previews/$name.png"
 			convert "$image" -resize 161x161! -quality 100 "$cache/previews/$name.png" && image="$cache/previews/$name.png"
 		fi
