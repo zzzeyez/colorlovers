@@ -8,7 +8,7 @@
 cache="${HOME}/.cache/colorlovers"
 amount="30"
 entry="$((RANDOM%$amount))"
-bg="181818"
+bg="191919"
 
 setup() {
 	if [[ "$clean" ]] ; then
