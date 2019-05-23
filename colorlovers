@@ -19,7 +19,7 @@ setup() {
 					rm -rf "$cache"
 					break
 				;;
-		        [Nn]* )
+				[Nn]* )
 					exit
 				;;
 				* )
@@ -45,7 +45,7 @@ setup() {
 	mkdir -p "$cache/themes"
 	mkdir -p "$cache/previews"
 	if [[ -z "$keyword" ]] && [[ -f "$cache/keywords" ]] ; then
-		shuf="$(which shuf)"
+		shuf="$(command -v shuf)"
 		if [ -x "$shuf" ] ; then
 			keyword="$(cat $cache/keywords | shuf -n 1)"
 		fi
@@ -104,7 +104,7 @@ setwal() {
 		if [[ "$dummy" =~ [a-zA-Z] ]] ; then
 			light="-light"
 			fg="000000"
-			gray="dfdfdf"
+			gray="dadada"
 		else
 			fg="fafafa"
 			gray="4f4f4f"
@@ -317,6 +317,4 @@ else
 fi
 
 # todo
-#
-# line 105 turns light='on' .  possibly useful
-# maybe for light themes vs dark themes
+# lightmode (light status is already appended to file names)
