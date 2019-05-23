@@ -102,9 +102,9 @@ setwal() {
 		bg="$(echo $bg | tr -d '#')"
 		dummy="$(echo $bg | head -c 1)"
 		if [[ "$dummy" =~ [a-zA-Z] ]] ; then
-			#light="on"
+			light="-light"
 			fg="000000"
-			gray="bfbfbf"
+			gray="dfdfdf"
 		else
 			fg="fafafa"
 			gray="4f4f4f"
@@ -165,7 +165,7 @@ setwal() {
 			fi
 			unset query
 		fi
-		echo "$name" > "$cache/colorlovers"
+		echo "$name$light" > "$cache/colorlovers"
 	fi
 }
 
