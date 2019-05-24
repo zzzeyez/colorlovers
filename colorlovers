@@ -6,6 +6,7 @@
 # author: daniel neemann (@zzzeyez)
 
 cache="${HOME}/.cache/colorlovers"
+themes="${HOME}/.config/wal/colorschemes/colorlovers"
 amount="30"
 entry="$((RANDOM%$amount))"
 bg="191919"
@@ -37,12 +38,12 @@ setup() {
 	fi
 	if [[ "$list" ]] ; then
 		echo 'themes:'
-		ls -1 "$cache/themes" | sed -e 's/.json//g'
+		ls -1 "$themes" | sed -e 's/.json//g'
 		printf "\nto load theme:\ncolorlovers -o theme\n"
 		exit
 	fi
 	mkdir -p "$cache"
-	mkdir -p "$cache/themes"
+	mkdir -p "$themes"
 	mkdir -p "$cache/previews"
 	if [[ -z "$keyword" ]] && [[ -f "$cache/keywords" ]] ; then
 		shuf="$(command -v shuf)"
@@ -59,7 +60,7 @@ setup() {
 }
 
 load() {
-	dir="$cache/themes"
+	dir="$themes"
 	if [[ "$random" ]] ; then
 		n_files="$(/bin/ls -1 "$dir" | wc -l | cut -f1)"
 		rand_num="$(awk "BEGIN{srand();print int($n_files * rand()) + 1;}")"
@@ -221,7 +222,7 @@ walset() {
 
 save() {
 	name="$(cat $cache/colorlovers)"
-	grep -v "wallpaper" "${HOME}/.cache/wal/colors.json" > "$cache/themes/$name.json" &&
+	grep -v "wallpaper" "${HOME}/.cache/wal/colors.json" > "$themes/$name.json" &&
 	if [[ -z "$quiet" ]] ; then
 		echo "colorscheme $name saved."
 		echo "to load:"
@@ -258,6 +259,7 @@ flags() {
 			notify="on"
 			;;
 			s)
+			setup
 			save="on"
 			save
 			notify
