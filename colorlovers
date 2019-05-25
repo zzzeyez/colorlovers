@@ -89,7 +89,7 @@ colorlovers() {
 		color3=$(echo "$json" | jq ".[$entry] | .colors | .[2]" | tr -d '"')
 		color4=$(echo "$json" | jq ".[$entry] | .colors | .[3]" | tr -d '"')
 		color5=$(echo "$json" | jq ".[$entry] | .colors | .[4]" | tr -d '"')
-		image=$(echo "$json" | jq ".[$entry] | .imageUrl" | tr -d '"')
+		#image=$(echo "$json" | jq ".[$entry] | .imageUrl" | tr -d '"')
 	fi
 }
 
@@ -139,13 +139,13 @@ setwal() {
 		"color15": "#'"$fg"'" }} ' | jq . > "$cache/colors.json"
 		wal --theme "$cache/colors.json" -q -n && rm "$cache/colors.json" &&
 		name="$(echo $title | sed 's/[^a-z0-9A-Z]//g')"
-		if [[ -f "$cache/previews/$name.png" ]] ; then
-			image="$cache/previews/$name.png"
-		else
-			curl -o "$cache/previews/$name.png" "$image" &>/dev/null
-			image="$cache/previews/$name.png"
-			convert "$image" -resize 161x161! -quality 100 "$cache/previews/$name.png" && image="$cache/previews/$name.png"
-		fi
+		#if [[ -f "$cache/previews/$name.png" ]] ; then
+			#image="$cache/previews/$name.png"
+		#else
+			#curl -o "$cache/previews/$name.png" "$image" &>/dev/null
+			#image="$cache/previews/$name.png"
+			#convert "$image" -resize 161x161! -quality 100 "$cache/previews/$name.png" && image="$cache/previews/$name.png"
+		#fi
 		if [[ "$keyword" ]] ; then
 			if [[ ! -f "$cache/keywords" ]] ; then
 				touch "$cache/keywords"
@@ -193,24 +193,27 @@ printpalette() {
 }
 
 notify() {
-	if [[ "$notify" ]] ; then
+	if [[ "$notify" ]] && [[ "$(command -v notify-send)" ]] ; then
+		image="$cache/preview.png"
 		if [[ "$save" ]] ; then
-			image="$cache/previews/$name.png"
-			if [[ -f "$image" ]] ; then
-				notify-send -m "colorscheme $name saved" -i "$image"
-			else
-				notify-send "colorscheme $name saved"
-			fi
+			# saving file
+			source "${HOME}/.cache/wal/colors.sh"
+			status='saved'
 		elif [[ "$file" ]] ; then
-			image="$cache/previews/$name.png"
-			if [[ -f "$image" ]] ; then
-				notify-send -m "colorscheme $name loaded" -i "$image"
-			else
-				notify-send "colorscheme $name loaded"
-			fi
+			source "${HOME}/.cache/wal/colors.sh"
+			status='loaded'
 		elif [[ "$url" ]] ; then
-			notify-send -m "$title by $username (keyword: $keyword)" -i "$image"
+			status='loaded'
+			hash='#'
 		fi
+			convert -size 60x300 \
+				xc:"$hash$color1" \
+				xc:"$hash$color2" \
+				xc:"$hash$color3" \
+				xc:"$hash$color4" \
+				xc:"$hash$color5" \
+				+append "$image"
+			notify-send -m "colorscheme $name $status" -i "$image"
 	fi
 }
 
@@ -320,3 +323,7 @@ fi
 
 # todo
 # lightmode (light status is already appended to file names)
+
+# remove badge cache and download function
+
+# ability to load theme with custom background color
