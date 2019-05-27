@@ -9,7 +9,7 @@ cache="${HOME}/.cache/colorlovers"
 themes="${HOME}/.config/wal/colorschemes/colorlovers"
 amount="30"
 entry="$((RANDOM%$amount))"
-bg="191919"
+bg="202020"
 
 setup() {
 	if [[ "$clean" ]] ; then
@@ -108,7 +108,7 @@ setwal() {
 			gray="dadada"
 		else
 			fg="fafafa"
-			gray="4f4f4f"
+			gray="484848"
 		fi
 		unset dummy
 		# create wal theme
@@ -139,13 +139,6 @@ setwal() {
 		"color15": "#'"$fg"'" }} ' | jq . > "$cache/colors.json"
 		wal --theme "$cache/colors.json" -q -n && rm "$cache/colors.json" &&
 		name="$(echo $title | sed 's/[^a-z0-9A-Z]//g')"
-		#if [[ -f "$cache/previews/$name.png" ]] ; then
-			#image="$cache/previews/$name.png"
-		#else
-			#curl -o "$cache/previews/$name.png" "$image" &>/dev/null
-			#image="$cache/previews/$name.png"
-			#convert "$image" -resize 161x161! -quality 100 "$cache/previews/$name.png" && image="$cache/previews/$name.png"
-		#fi
 		if [[ "$keyword" ]] ; then
 			if [[ ! -f "$cache/keywords" ]] ; then
 				touch "$cache/keywords"
@@ -194,26 +187,29 @@ printpalette() {
 
 notify() {
 	if [[ "$notify" ]] && [[ "$(command -v notify-send)" ]] ; then
-		image="$cache/preview.png"
 		if [[ "$save" ]] ; then
 			# saving file
 			source "${HOME}/.cache/wal/colors.sh"
 			status='saved'
 		elif [[ "$file" ]] ; then
+			# loading local colorscheme
 			source "${HOME}/.cache/wal/colors.sh"
 			status='loaded'
 		elif [[ "$url" ]] ; then
-			status='loaded'
+			# downloading colorscheme
+			status="loaded (keyword: $keyword)"
 			hash='#'
 		fi
+		if [[ ! -f "$cache/previews/$name.png" ]] ; then
 			convert -size 60x300 \
 				xc:"$hash$color1" \
 				xc:"$hash$color2" \
 				xc:"$hash$color3" \
 				xc:"$hash$color4" \
 				xc:"$hash$color5" \
-				+append "$image"
-			notify-send -m "colorscheme $name $status" -i "$image"
+				+append "$cache/previews/$name.png"
+		fi
+		notify-send -m "colorscheme $name $status" -i "$cache/previews/$name.png" 
 	fi
 }
 
