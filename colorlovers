@@ -225,7 +225,7 @@ save() {
 	if [[ -z "$quiet" ]] ; then
 		echo "colorscheme $name saved."
 		echo "to load:"
-		echo "wal --theme $name"
+		echo "colorlovers -l $name"
 	fi
 }
 
