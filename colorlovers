@@ -171,11 +171,12 @@ printpalette() {
 		YLW="\e[33m"
 		BLU="\e[34m"
 		PUR="\e[35m"
+		CYN="\e[36m"
 		RST="\e[0m"
 		# build the color bars
 		BAR="███"
 		((LEN = ${#BAR} * 6))
-		OUTT="$RED$BAR$GRN$BAR$YLW$BAR$BLU$BAR$PUR$BAR$RST"
+		OUTT="$RED$BAR$GRN$BAR$YLW$BAR$BLU$BAR$PUR$BAR$CYN$BAR$RST"
 		# print it
 		if [[ "$file" ]] ; then
 			printf "$OUTT\n$name loaded \n"
@@ -201,12 +202,13 @@ notify() {
 			hash='#'
 		fi
 		if [[ ! -f "$cache/previews/$name.png" ]] ; then
-			convert -size 60x300 \
+			convert -size 50x300 \
 				xc:"$hash$color1" \
 				xc:"$hash$color2" \
 				xc:"$hash$color3" \
 				xc:"$hash$color4" \
 				xc:"$hash$color5" \
+				xc:"$hash$color6" \
 				+append "$cache/previews/$name.png"
 		fi
 		notify-send -m "colorscheme $name $status" -i "$cache/previews/$name.png" 
